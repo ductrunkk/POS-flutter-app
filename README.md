@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # table_booking
 
 A new Flutter project.
@@ -14,3 +15,6 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+=======
+# POS-flutter-app
+>>>>>>> cee0b9c91af1e5d5676c535e13894c4afac1da32
