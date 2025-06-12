@@ -96,12 +96,61 @@ Future<void> generateKitchenOrderPDF({
               style: pw.TextStyle(fontSize: 16),
             ),
             pw.SizedBox(height: 24),
-            pw.Text('Ordered Items:',
+                pw.Text('Ordered Items:',
                 style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 8),
             pw.TableHelper.fromTextArray(
               headers: ['Dish', 'Qty'],
               data: details.map((d) => [
+                d.dishname,
+                d.quantity.toString(),
+              ]).toList(),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              cellAlignment: pw.Alignment.centerLeft,
+              headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+
+  await Printing.layoutPdf(
+    onLayout: (PdfPageFormat format) async => pdf.save(),
+  );
+}
+
+Future<void> generateNewItemsOnlyPDF({
+  required int orderId,
+  required String tableName,
+  required String waiterName,
+  required DateTime orderTime,
+  required List<OrderDetailModel> newItems,
+}) async {
+  final pdf = pw.Document();
+
+  pdf.addPage(
+    pw.Page(
+      pageFormat: PdfPageFormat.a5,
+      margin: pw.EdgeInsets.all(32),
+      build: (context) {
+        return pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text('UPDATED ORDER - NEW ITEMS ONLY',
+                style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 12),
+            pw.Text('Order ID: $orderId'),
+            pw.Text('Table: $tableName'),
+            pw.Text('Waiter: $waiterName'),
+            pw.Text('Time: ${Formatters.dateTime.format(orderTime)}'),
+            pw.SizedBox(height: 16),
+            pw.Text('Newly Added Items:',
+                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 8),
+            pw.TableHelper.fromTextArray(
+              headers: ['Dish', 'Qty'],
+              data: newItems.map((d) => [
                 d.dishname,
                 d.quantity.toString(),
               ]).toList(),

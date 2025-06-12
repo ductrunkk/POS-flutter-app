@@ -5,6 +5,7 @@ import 'package:table_booking/controllers/menu_controller.dart';
 import 'package:table_booking/pages/order_summary_page.dart';
 
 import '../models/dish_model.dart';
+import '../models/order_detail_model.dart';
 
 class MenuPage extends StatelessWidget {
 
@@ -129,10 +130,19 @@ class MenuPage extends StatelessWidget {
                     final args = Get.arguments as Map<String, dynamic>;
                     final tableId = args['tableId'] as int;
                     final orderId = await c.placeOrder(tableId);
+
                     Get.to(
-                          () => OrderSummaryPage(orderId: orderId, tableId: tableId),
+                          () => OrderSummaryPage(
+                        orderId: orderId,
+                        tableId: tableId,
+                        isConfirmationMode: true,
+                      ),
                       binding: OrderSummaryBinding(),
-                      arguments: {'orderId': orderId, 'tableId': tableId},
+                      arguments: {
+                        'orderId': orderId,
+                        'tableId': tableId,
+                        'isConfirmationMode': true,
+                      },
                     );
                   }
                       : null,

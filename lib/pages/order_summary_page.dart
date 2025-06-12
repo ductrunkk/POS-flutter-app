@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:table_booking/pages/menu_page.dart';
+import 'package:table_booking/pages/payment_page.dart';
 import 'package:table_booking/pages/table_page.dart';
+import '../bindings/menu_binding.dart';
+import '../bindings/payment_binding.dart';
 import '../controllers/order_summary_controller.dart';
 
 class OrderSummaryPage extends StatelessWidget {
   final int orderId;
   final int tableId;
+  final bool isConfirmationMode; // true = xác nhận đơn, false = đang phục vụ
 
   const OrderSummaryPage({super.key,
     required this.orderId,
     required this.tableId,
+    required this.isConfirmationMode,
   });
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<OrderSummaryController>(
       builder: (c) => Scaffold(
-        appBar: AppBar(title: const Text('Xác nhận đơn')),
+        appBar: AppBar(
+            title: Text(
+              isConfirmationMode ? 'Xác nhận đơn' : 'Đơn đang phục vụ',
+            )
+        ),
         body: c.loading
             ? const Center(child: CircularProgressIndicator())
             : c.error != null
@@ -27,10 +36,10 @@ class OrderSummaryPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('🧾 Mã đơn: ${c.orderCode}', style: const TextStyle(fontSize: 16)),
-              Text('🪑 Bàn: $tableId ', style: const TextStyle(fontSize: 16)),
+              Text('Mã đơn: ${c.orderCode}', style: const TextStyle(fontSize: 16)),
+              Text('Bàn: $tableId ', style: const TextStyle(fontSize: 16)),
               const Divider(height: 30),
-              const Text('📋 Danh sách món:', style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+              const Text('Danh sách món:', style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               Expanded(
                 child: ListView.builder(
@@ -54,15 +63,15 @@ class OrderSummaryPage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Tổng cộng:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  Text('${c.totalAmount.toStringAsFixed(0)} \$', style: const TextStyle(fontSize: 20, color: Colors.teal, fontWeight: FontWeight.bold)),
+                  const Text('Tổng cộng:', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+                  Text('${c.totalAmount.toStringAsFixed(0)} \$', style: const TextStyle(fontSize: 30, color: Colors.teal, fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: isConfirmationMode ? ElevatedButton.icon(
                       onPressed: () async {
                         final success = await c.handleCancel(orderId);
                         if (success) {
@@ -77,19 +86,45 @@ class OrderSummaryPage extends StatelessWidget {
                         backgroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
+                    ) :
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        // TODO: tạm tính
+                      },
+                      icon: const Icon(Icons.receipt_long),
+                      label: const Text('TẠM TÍNH'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(
+                          color: Colors.blue,
+                          width: 2.0,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        await c.printToKitchen(orderId);
-                        // Get.offAll(() => TablePage());
+                        if(isConfirmationMode == true){
+                          await c.printToKitchen(orderId);
+                          // Get.offAll(() => TablePage());
+                        }else{
+                              () => PaymentPage();
+                        binding: PaymentBinding();
+                        //arguments: {'tableId': table. tableId},;
+                        }
                       },
-                      icon: const Icon(Icons.check_circle),
-                      label: const Text('XÁC NHẬN', style: TextStyle(color: Colors.white)),
+                      icon: Icon(isConfirmationMode
+                          ? Icons.check_circle
+                          : Icons.payment),
+                      label: Text(isConfirmationMode
+                          ? 'XÁC NHẬN'
+                          : 'THANH TOÁN', style: TextStyle(color: Colors.white)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: isConfirmationMode
+                            ? Colors.green
+                            : Colors.blue,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                     ),
@@ -99,6 +134,24 @@ class OrderSummaryPage extends StatelessWidget {
             ],
           ),
         ),
+        floatingActionButton: isConfirmationMode
+            ? null
+            : Padding(
+          padding: const EdgeInsets.only(bottom: 120),
+          child: FloatingActionButton.large(
+            onPressed:  () async {
+              Get.to(
+                    () => MenuPage(),
+                binding: MenuBinding(),
+                arguments: {'tableId': tableId, 'orderId': orderId},
+              );
+            },
+            backgroundColor: Colors.blue, // Màu xanh nước biển
+            foregroundColor: Colors.white, // Màu icon
+            child: const Icon(Icons.add),
+          ),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       ),
     );
   }

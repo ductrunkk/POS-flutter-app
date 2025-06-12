@@ -40,13 +40,18 @@ class PaymentController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    const testInvoiceId = 1;
-    fetchInvoice(testInvoiceId).then((_) async {
-      final orderId = await fetchOrderIdByInvoice(testInvoiceId);
-      if (orderId != null) {
-        fetchOrderDetails(orderId);
-      }
-    });
+
+    final args = Get.arguments;
+    final invoiceId = args['invoiceId'];
+    final orderId = args['orderId'];
+
+    if (invoiceId != null) {
+      fetchInvoice(invoiceId).then((_) async {
+        if (orderId != null) {
+          fetchOrderDetails(orderId);
+        }
+      });
+    }
   }
 }
 

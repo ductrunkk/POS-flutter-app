@@ -29,6 +29,17 @@ class OrderDetailModel {
 class OrderDetailSnapshot {
   static const _table = 'orderdetail';
 
+  static Future<List<OrderDetailModel>> fetchOrderDetails(int orderId) async {
+    final response = await Supabase.instance.client
+        .from('orderdetail')
+        .select('orderid, dishid, quantity, unitprice, dish(dishname)')
+        .eq('orderid', orderId);
+
+    return (response as List)
+        .map((e) => OrderDetailModel.fromJson(e))
+        .toList();
+  }
+
   /// Lấy danh sách order details cho 1 orderId (kèm dish nested)
   static Future<List<OrderDetailModel>> fetchByOrderId(int orderId) async {
     final data = await Supabase.instance.client
@@ -57,6 +68,45 @@ class OrderDetailSnapshot {
     } catch (e) {
       print('Failed to add or update order detail: $e');
     }
+  }
+
+  //hàm thêm món mới cho order
+  static Future<List<OrderDetailModel>> addNewItemsOnly(int orderId, List<OrderDetailModel> itemsToAdd) async {
+    final List<OrderDetailModel> insertedItems = [];
+
+    for (final item in itemsToAdd) {
+      final existing = await Supabase.instance.client
+          .from('OrderDetail')
+          .select()
+          .eq('orderid', orderId)
+          .eq('dishid', item.dishid)
+          .maybeSingle();
+
+      if (existing == null) {
+        final res = await Supabase.instance.client
+            .from('OrderDetail')
+            .insert({
+          'orderid': orderId,
+          'dishid': item.dishid,
+          'quantity': item.quantity,
+          'unitprice': item.unitprice,
+        })
+            .select('*, dish(dishname)')
+            .single();
+
+        insertedItems.add(OrderDetailModel.fromJson(res));
+      } else {
+        await Supabase.instance.client
+            .from('OrderDetail')
+            .update({
+          'quantity': (existing['quantity'] as int) + item.quantity,
+        })
+            .eq('orderid', orderId)
+            .eq('dishid', item.dishid);
+      }
+    }
+
+    return insertedItems;
   }
 
   /// Xóa món khỏi order

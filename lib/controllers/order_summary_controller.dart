@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:table_booking/helpers/pdf_helper.dart';
 import 'package:table_booking/models/employee_model.dart';
 import 'package:table_booking/models/order_detail_model.dart';
@@ -45,6 +46,50 @@ class OrderSummaryController extends GetxController {
     return success;
   }
 
+  Future<void> addDishesToOrder(List<OrderDetailModel> selectedItems) async {
+    try {
+      // 🟡 Gọi hàm snapshot để thêm món mới
+      final newItems = await OrderDetailSnapshot.addNewItemsOnly(orderId, selectedItems);
+
+      if (newItems.isEmpty) {
+        Get.snackbar("Không có món mới", "Các món đã tồn tại, không in lại");
+        return;
+      }
+
+      // Truy vấn thông tin bổ sung cho in hóa đơn (table name, waiter name, order time)
+      final order = await Supabase.instance.client
+          .from('Order')
+          .select()
+          .eq('orderid', orderId)
+          .single();
+
+      final table = await Supabase.instance.client
+          .from('TableRestaurant')
+          .select('tablename')
+          .eq('tableid', order['tableid']) // hoặc dùng tableId nếu bạn có sẵn
+          .single();
+
+      final waiter = await Supabase.instance.client
+          .from('Employee')
+          .select('fullname')
+          .eq('employeeid', order['waiterid'])
+          .single();
+
+      // 🟡 Gọi hàm in
+      await generateKitchenOrderPDF(
+        orderId: orderId,
+        tableName: table['tablename'],
+        waiterName: waiter['fullname'],
+        orderTime: DateTime.parse(order['ordertime']),
+        details: newItems, // 🔥 chỉ in món mới
+      );
+
+      Get.snackbar("Thành công", "Đã gửi ${newItems.length} món mới vào bếp");
+    } catch (e) {
+      Get.snackbar("Lỗi", "Không thể thêm món mới: $e", backgroundColor: Colors.red, colorText: Colors.white);
+    }
+  }
+
   Future<void> printToKitchen(int orderId) async {
     try {
       // 1. Lấy order + table name từ snapshot
@@ -74,6 +119,8 @@ class OrderSummaryController extends GetxController {
       print('Không thể in đơn cho bếp: $e');
     }
   }
+
+
 
   double get totalAmount => items.fold(0.0, (sum, od) => sum + od.unitprice * od.quantity);
 

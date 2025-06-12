@@ -1,4 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:table_booking/models/order_detail_model.dart';
+import 'package:table_booking/models/table_model.dart';
 
 class OrderModel {
   final int orderId;
@@ -16,6 +18,7 @@ class OrderModel {
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
+
     return OrderModel(
       orderId: json['orderid'] as int,
       tableId: json['tableid'] as int,
@@ -115,5 +118,6 @@ class OrderSnapshot {
       throw Exception('Failed to fetch order with table name: $e');
     }
   }
+
 
 }
