@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:table_booking/bindings/table_binding.dart';
+import 'package:table_booking/controllers/employee_controller.dart';
 import 'package:table_booking/pages/login_page.dart';
 import 'package:table_booking/pages/table_page.dart';
 import 'bindings/payment_binding.dart';
@@ -24,8 +25,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      initialBinding: TableBinding(),
+      initialBinding: BindingsBuilder(() {
+        TableBinding().dependencies();
+        BindingsEmployeeController().dependencies();
+      }),
       home: PageLogin(),
+      // home: TablePage(),
       theme: ThemeData(useMaterial3: true),
       debugShowCheckedModeBanner: false,
     );

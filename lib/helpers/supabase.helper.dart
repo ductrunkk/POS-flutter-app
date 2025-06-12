@@ -23,6 +23,23 @@ class SupabaseSnapshot {
     return data.map((e) => fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  static Future<T> getById<T>({
+    required String table,
+    required T Function(Map<String, dynamic> json) fromJson,
+    String selectString = "",
+    required String idKey,
+    required String idValue,
+  }) async {
+    var data =
+        await _client
+            .from(table)
+            .select(selectString)
+            .eq(idKey, idValue)
+            .single();
+
+    return fromJson(data);
+  }
+
   /// Lấy bản đồ các bản ghi với khoá được chỉ định bởi [getId] từ [table].
   static Future<Map<K, T>> getMapT<K, T>({
     required String table,
@@ -50,7 +67,6 @@ class SupabaseSnapshot {
     required Map<String, dynamic> insertObject,
   }) async {
     final response = await _client.from(table).insert(insertObject);
-
   }
 
   /// Cập nhật các bản ghi trong [table] khớp với [equalObject] bằng [updateObject].
