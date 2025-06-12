@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:table_booking/controllers/employee_controller.dart';
+import 'package:table_booking/pages/login_page.dart';
 import 'package:table_booking/pages/table_page.dart';
 
 import '../helpers/my_helper.dart';
@@ -18,17 +20,13 @@ class AuthController {
       );
 
       final User user = res.user!;
-      // final userController = UserController.get();
+      if (user != null) {
+        final employeeController = EmployeeController.get();
 
-      // await userController.fetchUser();
-      // final myUser = userController.appUser;
+        await employeeController.getEmployee();
 
-      // await AppUserSnapshot.updateUserByObject(
-      //   updateObject: {"is_active": true},
-      //   equalObject: {"user_id": user.id},
-      // );
-
-      Get.offAll(() => TablePage());
+        Get.offAll(() => TablePage());
+      }
     } on AuthException catch (e) {
       // if (e.message == "Email not confirmed") {
       //   await supabase.auth.signInWithOtp(email: email);
@@ -46,8 +44,12 @@ class AuthController {
   static Future<void> signOut() async {
     // final userController = UserController.get();
     final supabase = Supabase.instance.client;
+    final employeeController = EmployeeController.get();
 
     await supabase.auth.signOut();
+    employeeController.emp = null;
+    Get.offAll(() => PageLogin());
+
     // await SupabaseSnapshot.update(
     //   table: AppUser.tableName,
     //   updateObject: {"is_active": false},

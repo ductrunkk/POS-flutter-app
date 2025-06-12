@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:table_booking/controllers/employee_controller.dart';
 import 'package:table_booking/pages/order_summary_page.dart';
+import 'package:table_booking/pages/profile_page.dart';
 import '../bindings/menu_binding.dart';
 import '../bindings/order_summary_binding.dart';
 import '../controllers/table_controller.dart';
@@ -15,7 +17,20 @@ class TablePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chọn Bàn'),
-
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(5.0),
+            child: IconButton(
+              icon: const Icon(Icons.person, size: 35),
+              onPressed: () {
+                Get.to(
+                  () => ProfilePage(),
+                  binding: BindingsEmployeeController(),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => c.fetchTables(),
@@ -39,7 +54,7 @@ class TablePage extends StatelessWidget {
                 Color bg;
                 switch (table.status.name) {
                   case "available":
-                    bg =  Colors.white;
+                    bg = Colors.white;
                     break;
                   case "reserved":
                     bg = Colors.amber[300]!;
@@ -58,7 +73,7 @@ class TablePage extends StatelessWidget {
 
                       if (orderId != null) {
                         Get.to(
-                              () => OrderSummaryPage(
+                          () => OrderSummaryPage(
                             orderId: orderId,
                             tableId: table.tableId,
                             isConfirmationMode: false,
@@ -75,7 +90,7 @@ class TablePage extends StatelessWidget {
                       }
                     } else {
                       Get.to(
-                            () => MenuPage(),
+                        () => MenuPage(),
                         binding: MenuBinding(),
                         arguments: {'tableId': table.tableId},
                       );
@@ -87,7 +102,7 @@ class TablePage extends StatelessWidget {
                       Container(
                         decoration: BoxDecoration(
                           color: bg,
-                          border: Border.all(color: Colors.grey, width: 2.5,),
+                          border: Border.all(color: Colors.grey, width: 2.5),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.all(8),
@@ -106,9 +121,7 @@ class TablePage extends StatelessWidget {
                               const SizedBox(height: 8),
                               Text(
                                 table.status.name,
-                                style: TextStyle(
-                                  color: Colors.black,
-                                ),
+                                style: TextStyle(color: Colors.black),
                               ),
                             ],
                           ),
@@ -124,23 +137,38 @@ class TablePage extends StatelessWidget {
                           onSelected: (value) {
                             switch (value) {
                               case 'reserved':
-                                if(table.status.name == TableStatus.occupied.name) {
+                                if (table.status.name ==
+                                    TableStatus.occupied.name) {
                                   break;
                                 }
-                               c.updateTableStatus(table.tableId, TableStatus.reserved.name);
+                                c.updateTableStatus(
+                                  table.tableId,
+                                  TableStatus.reserved.name,
+                                );
                                 break;
                               case 'cancel':
-                                if(table.status.name == TableStatus.occupied.name) {
+                                if (table.status.name ==
+                                    TableStatus.occupied.name) {
                                   break;
                                 }
-                                c.updateTableStatus(table.tableId, TableStatus.available.name);
+                                c.updateTableStatus(
+                                  table.tableId,
+                                  TableStatus.available.name,
+                                );
                                 break;
                             }
                           },
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(value: 'reserved', child: Text('Đặt bàn')),
-                            PopupMenuItem(value: 'cancel', child: Text('Hủy bàn')),
-                          ],
+                          itemBuilder:
+                              (_) => const [
+                                PopupMenuItem(
+                                  value: 'reserved',
+                                  child: Text('Đặt bàn'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'cancel',
+                                  child: Text('Hủy bàn'),
+                                ),
+                              ],
                         ),
                       ),
                     ],
