@@ -29,16 +29,17 @@ class OrderDetailModel {
 class OrderDetailSnapshot {
   static const _table = 'orderdetail';
 
-  static Future<List<OrderDetailModel>> fetchOrderDetails(int orderId) async {
-    final response = await Supabase.instance.client
-        .from('orderdetail')
-        .select('orderid, dishid, quantity, unitprice, dish(dishname)')
-        .eq('orderid', orderId);
-
-    return (response as List)
-        .map((e) => OrderDetailModel.fromJson(e))
-        .toList();
-  }
+  // List<OrderDetailModel> orderDetails = [];
+  // Future<void> fetchOrderDetails(int orderId) async {
+  //   final res = await Supabase.instance.client
+  //       .from('orderdetail')
+  //       .select('orderid, dishid, quantity, unitprice, dish(dishname)')
+  //       .eq('orderid', orderId);
+  //
+  //   orderDetails = (res as List)
+  //       .map((e) => OrderDetailModel.fromJson(e as Map<String, dynamic>))
+  //       .toList();
+  // }
 
   /// Lấy danh sách order details cho 1 orderId (kèm dish nested)
   static Future<List<OrderDetailModel>> fetchByOrderId(int orderId) async {

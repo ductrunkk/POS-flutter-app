@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
         BindingsEmployeeController().dependencies();
       }),
       home: PageLogin(),
-      // home: TablePage(),
+      //home: TablePage(),
       theme: ThemeData(useMaterial3: true),
       debugShowCheckedModeBanner: false,
     );

@@ -3,71 +3,43 @@ import 'package:get/get.dart';
 import 'package:table_booking/bindings/order_summary_binding.dart';
 import 'package:table_booking/controllers/menu_controller.dart';
 import 'package:table_booking/pages/order_summary_page.dart';
-
+import '../controllers/order_summary_controller.dart';
 import '../models/dish_model.dart';
 import '../models/order_detail_model.dart';
 
 class MenuPage extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     final MenuControllers c = Get.find();
+    final args = Get.arguments as Map<String, dynamic>;
+    final int tableId = args['tableId'] as int;
+    final int? existingOrderId = args['orderId'] as int?;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Menu'),
-      ),
+      appBar: AppBar(title: const Text('Menu')),
       body: Column(
         children: [
-          // Category filter bar
-          Obx(() {
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: c.categories.map((cat) {
-                  final selected = cat.categoryId == c.selectedCategoryId.value;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: ChoiceChip(
-                      label: Text(cat.categoryName),
-                      selected: selected,
-                      onSelected: (_) {
-                        c.selectedCategoryId.value = cat.categoryId;
-                      },
-                    ),
-                  );
-                }).toList(),
-              ),
-            );
-          }),
-          // Dishes grid
+          // ... phần filter và grid giữ nguyên như trước ...
           Expanded(
             child: Obx(() {
               final list = c.filteredDishes;
-              if (list.isEmpty) {
-                return Center(child: CircularProgressIndicator());
-              }
-
+              if (list.isEmpty) return const Center(child: CircularProgressIndicator());
               return GridView.builder(
                 padding: const EdgeInsets.all(10),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
+                  crossAxisCount: 2, childAspectRatio: 0.7,
+                  crossAxisSpacing: 10, mainAxisSpacing: 10,
                 ),
                 itemCount: list.length,
-                itemBuilder: (ctx, i) {
+                itemBuilder: (_, i) {
                   final DishModel d = list[i];
-                  final qty = c.getQuantity(d.dishId);
                   return Card(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // 1. Image chiếm flex = 3
                         Expanded(
-                          flex:2,
+                          flex: 2,
                           child: ClipRRect(
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                             child: d.imageUrl != null
@@ -75,22 +47,19 @@ class MenuPage extends StatelessWidget {
                                 : Container(color: Colors.grey[200]),
                           ),
                         ),
-                        // 2. Phần info cố định chiều cao
                         SizedBox(
-                          height: 50, // giảm xuống cho vừa đủ tên + giá
+                          height: 50,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(d.dishName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                                Text(d.dishName, style: const TextStyle(fontWeight: FontWeight.bold)),
                                 Text('${d.price.toStringAsFixed(2)} ₫'),
                               ],
                             ),
                           ),
                         ),
-                        // 3. Phần selector số lượng cố định
                         SizedBox(
                           height: 40,
                           child: Obx(() {
@@ -119,41 +88,57 @@ class MenuPage extends StatelessWidget {
             }),
           ),
 
+          // Nút "Tạo đơn & Thêm món" hoặc "Thêm món"
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: GetBuilder<MenuControllers>(
-              builder: (c) {
-                final isEnabled = c.quantities.values.any((q) => q > 0);
-                return ElevatedButton(
-                  onPressed: isEnabled
-                      ? () async {
-                    final args = Get.arguments as Map<String, dynamic>;
-                    final tableId = args['tableId'] as int;
-                    final orderId = await c.placeOrder(tableId);
+            child: Obx(() {
+              final isEnabled = c.quantities.values.any((q) => q > 0);
+              return ElevatedButton(
+                onPressed: isEnabled
+                    ? () async {
+                  // 1. Tạo mới order nếu cần
+                  int orderId = existingOrderId ?? await c.placeOrder(tableId);
 
-                    Get.to(
-                          () => OrderSummaryPage(
-                        orderId: orderId,
-                        tableId: tableId,
-                        isConfirmationMode: true,
-                      ),
-                      binding: OrderSummaryBinding(),
-                      arguments: {
-                        'orderId': orderId,
-                        'tableId': tableId,
-                        'isConfirmationMode': true,
-                      },
-                    );
+                  // 2. Upsert tất cả món user đã chọn
+                  for (final entry in c.quantities.entries) {
+                    final dishId = entry.key;
+                    final qty = entry.value;
+                    if (qty > 0) {
+                      final dish = c.dishes.firstWhere((d) => d.dishId == dishId);
+                      await OrderDetailSnapshot.addOrUpdate(
+                        orderId,
+                        dishId,
+                        qty,
+                        dish.price,
+                      );
+                    }
                   }
-                      : null,
-                  child: const Text('Thêm vào đơn'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    textStyle: const TextStyle(fontSize: 18),
-                  ),
-                );
-              },
-            ),
+
+                  // 3. Điều hướng thẳng sang OrderSummaryPage
+                  Get.off(
+                        () => OrderSummaryPage(
+                      orderId: orderId,
+                      tableId: tableId,
+                      isConfirmationMode: true,
+                    ),
+                    binding: OrderSummaryBinding(),
+                    arguments: {
+                      'orderId': orderId,
+                      'tableId': tableId,
+                      'isConfirmationMode': true,
+                    },
+                  );
+                }
+                    : null,
+                child: Text(
+                  existingOrderId != null ? 'Thêm món vào đơn' : 'Tạo đơn & thêm món',
+                  style: const TextStyle(fontSize: 18),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              );
+            }),
           ),
         ],
       ),

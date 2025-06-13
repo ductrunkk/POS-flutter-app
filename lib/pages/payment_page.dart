@@ -57,9 +57,7 @@ class PaymentPage extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    final inv = controller.invoice.value;
-                    final details = controller.orderDetails;
-                    await generateInvoicePDF(inv!, details);
+                    await controller.completePayment();
                   },
                   child: const Text('PAY NOW'),
                 ),

@@ -8,8 +8,17 @@ import 'package:table_booking/models/order_model.dart';
 import 'package:table_booking/pages/table_page.dart';
 class OrderSummaryController extends GetxController {
   final int orderId;
-  List<OrderDetailModel> items = [];
+
+  /// Trạng thái load
   bool loading = false;
+
+  /// Danh sách món
+  List<OrderDetailModel> items = [];
+
+  /// Tổng tiền
+  double totalAmount = 0.0;
+
+  /// Lỗi nếu có
   String? error;
 
   OrderSummaryController(this.orderId);
@@ -20,18 +29,44 @@ class OrderSummaryController extends GetxController {
     loadOrderDetails();
   }
 
+
+
+  // Future<void> loadOrderDetails() async {
+  //   loading = true;
+  //   update();
+  //   try {
+  //     items = await OrderDetailSnapshot.fetchByOrderId(orderId);
+  //     error = null;
+  //   } catch (e) {
+  //     error = e.toString();
+  //   } finally {
+  //     loading = false;
+  //     update();
+  //   }
+  // }
+
   Future<void> loadOrderDetails() async {
-    loading = true;
-    update();
     try {
+      loading = true;
+      update(); // notify UI bắt đầu loading
+
       items = await OrderDetailSnapshot.fetchByOrderId(orderId);
+      totalAmount = items.fold(
+        0.0,
+            (sum, od) => sum + od.unitprice * od.quantity,
+      );
       error = null;
     } catch (e) {
       error = e.toString();
     } finally {
       loading = false;
-      update();
+      update(); // notify UI đã xong loading / có thể có lỗi
     }
+  }
+
+  /// Gọi lại khi cần refresh từ bên ngoài
+  Future<void> refreshItems() async {
+    await loadOrderDetails();
   }
 
   final OrderSnapshot _orderService = OrderSnapshot();
@@ -122,7 +157,7 @@ class OrderSummaryController extends GetxController {
 
 
 
-  double get totalAmount => items.fold(0.0, (sum, od) => sum + od.unitprice * od.quantity);
+  // double get totalAmount => items.fold(0.0, (sum, od) => sum + od.unitprice * od.quantity);
 
   String get orderCode => 'ORD' + orderId.toString();
 }
